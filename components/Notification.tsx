@@ -9,13 +9,13 @@ interface NotificationProps {
   duration?: number;
 }
 
-const Notification = React.memo(({ 
-  message, 
-  type, 
-  visible, 
-  onHide, 
-  duration = 3000 
-}: NotificationProps) {
+const Notification = React.memo(({
+  message,
+  type,
+  visible,
+  onHide,
+  duration = 3000,
+}: NotificationProps) => {
   const opacity = React.useRef(new Animated.Value(0)).current;
   const translateY = React.useRef(new Animated.Value(-20)).current;
 
