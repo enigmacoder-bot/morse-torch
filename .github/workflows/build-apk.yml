@@ -55,6 +55,13 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
       
+      - name: Fix Kotlin version compatibility
+        run: |
+          # Update build.gradle to use Kotlin 1.9.25
+          if [ -f "android/build.gradle" ]; then
+            sed -i "s/kotlinVersion = .*/kotlinVersion = '1.9.25'/g" android/build.gradle
+          fi
+      
       - name: Clean Gradle cache
         run: |
           echo "Cleaning Gradle cache..."
