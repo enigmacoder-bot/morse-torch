@@ -57,29 +57,24 @@ jobs:
       
       - name: Fix Kotlin version compatibility
         run: |
-          # Method 1: Update Kotlin version in root build.gradle
-          if [ -f "android/build.gradle" ]; then
-            # Try multiple patterns to find and replace kotlinVersion
-            sed -i 's/ext\.kotlinVersion = "[^"]*"/ext.kotlinVersion = "1.9.25"/g' android/build.gradle
-            sed -i "s/ext\.kotlinVersion = '[^']*'/ext.kotlinVersion = '1.9.25'/g" android/build.gradle
-            sed -i 's/kotlinVersion = "[^"]*"/kotlinVersion = "1.9.25"/g' android/build.gradle
-            sed -i "s/kotlinVersion = '[^']*'/kotlinVersion = '1.9.25'/g" android/build.gradle
-          fi
+          # Add suppression to all module build.gradle files
+          find android -name "build.gradle" -o -name "build.gradle.kts" | while read file; do
+            if grep -q "composeOptions" "$file" 2>/dev/null; then
+              echo "Adding suppression to $file"
+              # Add after composeOptions block
+              sed -i '/composeOptions {/a\        kotlinCompilerExtensionVersion = "1.5.15"\n    }\n    kotlinOptions {\n        freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24"]' "$file"
+            fi
+          done
           
-          # Method 2: Add suppression to gradle.properties as fallback
+          # Add to gradle.properties (global suppression)
+          echo "" >> android/gradle.properties
+          echo "# Suppress Kotlin version compatibility check" >> android/gradle.properties
           echo "kotlin.suppressKotlinVersionCompatibilityCheck=1.9.24" >> android/gradle.properties
           
-          # Method 3: Add compiler args to app/build.gradle
-          if [ -f "android/app/build.gradle" ]; then
-            # Add kotlinOptions with suppression if not exists
-            if ! grep -q "suppressKotlinVersionCompatibilityCheck" android/app/build.gradle; then
-              sed -i '/android {/a\    kotlinOptions {\n        freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24"]\n    }' android/app/build.gradle
-            fi
-          fi
+          # Add system property to gradle.properties
+          echo "systemProp.compose.kotlinCompilerExtensionVersion=1.5.15" >> android/gradle.properties
+          echo "systemProp.compose.kotlinCompilerPlugin=androidx.compose.compiler:compiler:1.5.15" >> android/gradle.properties
           
-          # Show what we have
-          echo "=== Root build.gradle kotlinVersion ==="
-          grep -n "kotlinVersion" android/build.gradle || echo "Not found"
           echo "=== gradle.properties ==="
           cat android/gradle.properties
       
