@@ -31,6 +31,13 @@ jobs:
       - name: Setup Expo CLI
         run: npm install -g @expo/cli eas-cli
       
+      - name: Clear Metro bundler cache
+        run: |
+          rm -rf node_modules/.cache
+          rm -rf .expo
+          rm -rf $TMPDIR/metro-*
+          rm -rf $TMPDIR/haste-*
+      
       - name: Generate Android project for standalone build
         run: npx expo prebuild --platform android --clean
       
