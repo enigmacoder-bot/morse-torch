@@ -43,15 +43,11 @@ const AudioControls = React.memo(({
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // Memoize formatted times to avoid recalculation on every render
-  const formattedCur = (milliseconds: number): string => {
-    const totalSeconds = Math.floor(milliseconds / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+  const formattedCurrentTime = useMemo(() => formatTime(currentTime), [currentTime]);
+  const formattedDuration = useMemo(() => formatTime(duration), [duration]);
 
   // Handle play/pause button press animation
-  const handlePlayPausePress = () => {
+  const handlePlayPausePress = useCallback(() => {
     if (disabled) return;
 
     Animated.sequence([
