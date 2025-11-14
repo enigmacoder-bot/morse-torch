@@ -31,6 +31,10 @@ local.properties
 *.keystore
 !debug.keystore
 
+# Generated native projects (from expo prebuild)
+android/
+ios/
+
 # node.js
 node_modules/
 npm-debug.log
