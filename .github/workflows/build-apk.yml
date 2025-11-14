@@ -59,7 +59,9 @@ jobs:
         run: |
           # Update build.gradle to use Kotlin 1.9.25
           if [ -f "android/build.gradle" ]; then
-            sed -i "s/kotlinVersion = .*/kotlinVersion = '1.9.25'/g" android/build.gradle
+            sed -i "s/kotlinVersion = \".*\"/kotlinVersion = \"1.9.25\"/g" android/build.gradle
+            sed -i "s/kotlinVersion = '.*'/kotlinVersion = '1.9.25'/g" android/build.gradle
+            cat android/build.gradle | grep kotlinVersion
           fi
       
       - name: Clean Gradle cache
