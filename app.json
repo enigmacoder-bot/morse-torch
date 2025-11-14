@@ -1,13 +1,11 @@
 {
   "expo": {
-    "name": "Morse Code Generator",
-    "slug": "morse-code-app",
+    "name": "Morse Flash",
+    "slug": "morse-flash",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0f172a"
     },
@@ -15,10 +13,6 @@
       "**/*"
     ],
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0f172a"
-      },
       "package": "com.morseflash.app",
       "permissions": [
         "CAMERA"
@@ -29,7 +23,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Morse Code Generator to access your camera for flashlight functionality."
+          "cameraPermission": "Allow Morse Flash to access your camera for flashlight functionality."
         }
       ]
     ]
