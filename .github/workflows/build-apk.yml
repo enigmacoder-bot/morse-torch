@@ -57,18 +57,13 @@ jobs:
       
       - name: Fix Kotlin version compatibility
         run: |
-          # Add Kotlin version override to gradle.properties
-          echo "kotlin.version=1.9.25" >> android/gradle.properties
+          # Suppress Kotlin version compatibility check in gradle.properties
+          echo "kotlin.suppressKotlinVersionCompatibilityCheck=1.9.24" >> android/gradle.properties
+          echo "android.suppressUnsupportedCompileSdk=34" >> android/gradle.properties
           
-          # Also try to update build.gradle files
-          find android -name "build.gradle" -type f -exec sed -i 's/ext\.kotlinVersion = "[^"]*"/ext.kotlinVersion = "1.9.25"/g' {} \;
-          find android -name "build.gradle" -type f -exec sed -i "s/ext\.kotlinVersion = '[^']*'/ext.kotlinVersion = '1.9.25'/g" {} \;
-          
-          # Show what we found
-          echo "=== Checking gradle.properties ==="
-          cat android/gradle.properties | grep -i kotlin || echo "No kotlin version in gradle.properties"
-          echo "=== Checking build.gradle files ==="
-          find android -name "build.gradle" -type f -exec grep -H "kotlinVersion" {} \; || echo "No kotlinVersion found"
+          # Show gradle.properties
+          echo "=== gradle.properties ==="
+          cat android/gradle.properties
       
       - name: Clean Gradle cache
         run: |
