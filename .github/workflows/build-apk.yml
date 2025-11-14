@@ -27,14 +27,12 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
-        working-directory: app-mobile
       
       - name: Setup Expo CLI
         run: npm install -g @expo/cli eas-cli
       
       - name: Generate Android project for standalone build
         run: npx expo prebuild --platform android --clean
-        working-directory: app-mobile
       
       - name: Update Gradle wrapper to required version
         run: |
@@ -46,17 +44,15 @@ jobs:
           echo "validateDistributionUrl=true" >> gradle/wrapper/gradle-wrapper.properties
           echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
           echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-        working-directory: app-mobile
       
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
-        working-directory: app-mobile
       
       - name: Clean Gradle cache
         run: |
           echo "Cleaning Gradle cache..."
           ./gradlew clean --refresh-dependencies
-        working-directory: app-mobile/android
+        working-directory: android
       
       - name: Build standalone release APK
         run: |
@@ -84,10 +80,10 @@ jobs:
               attempt=$((attempt + 1))
             fi
           done
-        working-directory: app-mobile/android
+        working-directory: android
       
       - name: Upload standalone APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: morse-flash-standalone-apk
-          path: app-mobile/android/app/build/outputs/apk/release/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
