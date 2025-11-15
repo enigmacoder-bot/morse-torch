@@ -75,33 +75,8 @@ const AudioControls = React.memo(({
         <Text style={styles.headerText}>Audio Playback</Text>
       </View>
 
-      {/* Play/Pause Button */}
-      <View style={styles.playbackSection}>
-        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-          <TouchableOpacity
-            onPress={handlePlayPausePress}
-            style={[
-              styles.playButton,
-              disabled && styles.playButtonDisabled,
-              isPlaying && styles.playButtonPlaying,
-            ]}
-            activeOpacity={0.7}
-            disabled={disabled}
-          >
-            <Text style={styles.playButtonText}>
-              {isPlaying ? '⏸' : '▶'}
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
-
-      {/* Progress Bar */}
+      {/* Progress Bar - moved above play button */}
       <View style={styles.progressSection}>
-        <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{formattedCurrentTime}</Text>
-          <Text style={styles.timeText}>{formattedDuration}</Text>
-        </View>
-
         <TouchableOpacity
           style={styles.progressBarContainer}
           activeOpacity={1}
@@ -121,16 +96,42 @@ const AudioControls = React.memo(({
                 { width: progressWidth },
               ]}
             >
-              {/* Progress indicator handle */}
-              <View style={styles.progressHandle} />
+              {progress > 0 && <View style={styles.progressHandle} />}
             </View>
           </View>
         </TouchableOpacity>
+
+        <View style={styles.timeContainer}>
+          <Text style={styles.timeText}>{formattedCurrentTime}</Text>
+          <Text style={styles.timeText}>{formattedDuration}</Text>
+        </View>
+      </View>
+
+      {/* Play/Pause Button with better layout */}
+      <View style={styles.playbackSection}>
+        <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+          <TouchableOpacity
+            onPress={handlePlayPausePress}
+            style={[
+              styles.playButton,
+              disabled && styles.playButtonDisabled,
+              isPlaying && styles.playButtonPlaying,
+            ]}
+            activeOpacity={0.7}
+            disabled={disabled}
+          >
+            <View style={styles.playButtonInner}>
+              <Text style={styles.playButtonText}>
+                {isPlaying ? '⏸' : '▶'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* Speed Selector */}
       <View style={styles.speedSection}>
-        <Text style={styles.speedLabel}>Speed</Text>
+        <Text style={styles.speedLabel}>Playback Speed</Text>
         <View style={styles.speedOptions}>
           {SPEED_OPTIONS.map((speedOption) => (
             <TouchableOpacity
@@ -170,124 +171,152 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 24,
-    marginHorizontal: 16,
-    marginTop: 16,
+    padding: 20,
   },
   headerSection: {
-    marginBottom: 20,
+    marginBottom: 16,
     alignItems: 'center',
   },
   headerText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#f8fafc',
     textAlign: 'center',
-  },
-  playbackSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  playButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: '#3b82f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-  playButtonPlaying: {
-    backgroundColor: '#8b5cf6',
-  },
-  playButtonDisabled: {
-    backgroundColor: '#64748b',
-    opacity: 0.5,
-  },
-  playButtonText: {
-    fontSize: 32,
-    color: '#ffffff',
+    letterSpacing: 0.5,
   },
   progressSection: {
-    marginBottom: 20,
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  timeText: {
-    fontSize: 12,
-    color: '#cbd5e1',
-    fontWeight: '500',
+    marginBottom: 24,
   },
   progressBarContainer: {
-    height: 40,
+    height: 44,
     justifyContent: 'center',
+    marginBottom: 8,
   },
   progressBarBackground: {
-    height: 8,
+    height: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
-    overflow: 'hidden',
+    borderRadius: 3,
+    overflow: 'visible',
   },
   progressBarFill: {
     height: '100%',
     backgroundColor: '#3b82f6',
-    borderRadius: 4,
+    borderRadius: 3,
     position: 'relative',
   },
   progressHandle: {
     position: 'absolute',
-    right: -6,
-    top: -4,
+    right: -8,
+    top: -5,
     width: 16,
     height: 16,
     borderRadius: 8,
     backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#3b82f6',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 5,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
+  timeText: {
+    fontSize: 13,
+    color: '#94a3b8',
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  playbackSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+    paddingVertical: 8,
+  },
+  playButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#3b82f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 12,
+    borderWidth: 3,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
+  },
+  playButtonInner: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  playButtonPlaying: {
+    backgroundColor: '#8b5cf6',
+    shadowColor: '#8b5cf6',
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  playButtonDisabled: {
+    backgroundColor: '#475569',
+    shadowColor: '#475569',
+    borderColor: 'rgba(71, 85, 105, 0.3)',
+    opacity: 0.6,
+  },
+  playButtonText: {
+    fontSize: 36,
+    color: '#ffffff',
+    marginLeft: 2,
   },
   speedSection: {
-    marginTop: 8,
+    paddingTop: 4,
   },
   speedLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#cbd5e1',
     marginBottom: 12,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   speedOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    justifyContent: 'center',
   },
   speedButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 56,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   speedButtonActive: {
     backgroundColor: '#3b82f6',
     borderColor: '#3b82f6',
+    shadowColor: '#3b82f6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   speedButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   speedButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#cbd5e1',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#94a3b8',
   },
   speedButtonTextActive: {
     color: '#ffffff',
