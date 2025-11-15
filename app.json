@@ -4,10 +4,10 @@
     "slug": "morse-flash",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.svg",
+    "icon": "./assets/morse-icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/icon.svg",
+      "image": "./assets/morse-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0f172a"
     },
@@ -17,7 +17,7 @@
     "android": {
       "package": "com.morseflash.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.svg",
+        "foregroundImage": "./assets/morse-icon.png",
         "backgroundColor": "#0f172a"
       },
       "permissions": [
