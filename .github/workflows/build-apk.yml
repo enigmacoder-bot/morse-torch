@@ -57,12 +57,10 @@ jobs:
       
       - name: Fix Kotlin version compatibility  
         run: |
-          # Create gradle.properties with suppression flag
-          cat >> android/gradle.properties << 'EOF'
-
-# Suppress Kotlin-Compose version compatibility check
-kotlin.compiler.freeArgs=-P plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24
-EOF
+          # Add suppression flag to gradle.properties
+          echo "" >> android/gradle.properties
+          echo "# Suppress Kotlin-Compose version compatibility check" >> android/gradle.properties
+          echo "kotlin.compiler.freeArgs=-P plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24" >> android/gradle.properties
           
           echo "=== Updated gradle.properties ==="
           cat android/gradle.properties
