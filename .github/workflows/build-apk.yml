@@ -24,6 +24,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
       
       - name: Install dependencies
         run: npm install
@@ -31,54 +32,39 @@ jobs:
       - name: Setup Expo CLI
         run: npm install -g @expo/cli eas-cli
       
-      - name: Clear Metro bundler cache
+      - name: Clear caches
         run: |
           rm -rf node_modules/.cache
           rm -rf .expo
-          rm -rf $TMPDIR/metro-*
-          rm -rf $TMPDIR/haste-*
+          rm -rf /tmp/metro-* 2>/dev/null || true
+          rm -rf /tmp/haste-* 2>/dev/null || true
       
-      - name: Generate Android project for standalone build
+      - name: Generate Android project
         run: npx expo prebuild --platform android --clean
       
-      - name: Update Gradle wrapper to required version
+      - name: Update Kotlin version to 1.9.25
         run: |
-          cd android
-          echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
-          echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-          echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip" >> gradle/wrapper/gradle-wrapper.properties
-          echo "networkTimeout=10000" >> gradle/wrapper/gradle-wrapper.properties
-          echo "validateDistributionUrl=true" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
-          echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
+          # Update Kotlin version in root build.gradle
+          sed -i 's/kotlinVersion = "1.9.24"/kotlinVersion = "1.9.25"/' android/build.gradle
+          sed -i "s/kotlinVersion = '1.9.24'/kotlinVersion = '1.9.25'/" android/build.gradle
+          sed -i 's/ext\.kotlinVersion = "1.9.24"/ext.kotlinVersion = "1.9.25"/' android/build.gradle
+          sed -i "s/ext\.kotlinVersion = '1.9.24'/ext.kotlinVersion = '1.9.25'/" android/build.gradle
+          
+          echo "=== Updated Kotlin version to 1.9.25 ==="
+          grep -n "kotlin" android/build.gradle | head -20 || echo "No kotlinVersion found in build.gradle"
       
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
       
-      - name: Fix Kotlin version compatibility  
+      - name: Clean and build APK
         run: |
-          # Add suppression flag to gradle.properties
-          echo "" >> android/gradle.properties
-          echo "# Suppress Kotlin-Compose version compatibility check" >> android/gradle.properties
-          echo "kotlin.compiler.freeArgs=-P plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24" >> android/gradle.properties
-          
-          echo "=== Updated gradle.properties ==="
-          cat android/gradle.properties
-      
-      - name: Clean Gradle cache
-        run: |
-          echo "Cleaning Gradle cache..."
-          ./gradlew clean --refresh-dependencies
+          ./gradlew clean
+          ./gradlew assembleRelease --stacktrace
         working-directory: android
+        env:
+          NODE_ENV: production
       
-      - name: Build standalone release APK
-        run: |
-          echo "Building standalone release APK..."
-          # Build with suppression flag passed directly
-          ./gradlew assembleRelease --stacktrace -Pkotlin.compiler.freeArgs="-P plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24"
-        working-directory: android
-      
-      - name: Upload standalone APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: morse-flash-standalone-apk
