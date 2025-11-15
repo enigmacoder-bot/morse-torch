@@ -81,12 +81,8 @@ class FlashlightService {
 
       this.isTransmitting = true;
       
-      // Execute the timing sequence
-      await this.executeTimingSequence(timings);
-
-      // Transmission complete
-      this.isTransmitting = false;
-      onComplete?.();
+      // Execute the timing sequence with completion callback
+      this.executeTimingSequence(timings, onComplete, onError);
     } catch (error) {
       this.isTransmitting = false;
       console.error('[FlashlightService] Error during Morse transmission:', error);
@@ -101,16 +97,23 @@ class FlashlightService {
   /**
    * Execute the timing sequence for flashlight transmission
    * @param timings - Array of MorseTiming objects
+   * @param onComplete - Callback when sequence completes
+   * @param onError - Callback when sequence fails
    */
-  private async executeTimingSequence(timings: MorseTiming[]): Promise<void> {
-    return new Promise((resolve) => {
-      let currentIndex = 0;
+  private executeTimingSequence(
+    timings: MorseTiming[],
+    onComplete?: () => void,
+    onError?: (error: Error) => void
+  ): void {
+    let currentIndex = 0;
 
-      const scheduleNext = () => {
+    const scheduleNext = () => {
+      try {
         if (!this.isTransmitting || currentIndex >= timings.length) {
           // Turn off flashlight at the end
           this.turnOffFlashlight();
-          resolve();
+          this.isTransmitting = false;
+          onComplete?.();
           return;
         }
 
@@ -131,11 +134,15 @@ class FlashlightService {
         }, timing.duration + 10); // Adding 10ms buffer to ensure state changes are processed
 
         this.transmissionTimeouts.push(timeoutId);
-      };
+      } catch (error) {
+        this.isTransmitting = false;
+        this.turnOffFlashlight();
+        onError?.(error as Error);
+      }
+    };
 
-      // Start the sequence
-      scheduleNext();
-    });
+    // Start the sequence
+    scheduleNext();
   }
 
   /**

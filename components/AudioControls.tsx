@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Animated,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface AudioControlsProps {
   speed: number;
@@ -67,7 +68,7 @@ const AudioControls = React.memo(({
   }, [disabled, onPlayPause, scaleAnim]);
 
   // Memoize progress bar width calculation
-  const progressWidth = useMemo(() => `${progress * 100}%`, [progress]);
+  const progressWidth = useMemo(() => `${progress * 100}%` as const, [progress]);
 
   return (
     <View style={styles.container}>
@@ -120,11 +121,12 @@ const AudioControls = React.memo(({
             activeOpacity={0.7}
             disabled={disabled}
           >
-            <View style={styles.playButtonInner}>
-              <Text style={styles.playButtonText}>
-                {isPlaying ? '⏸' : '▶'}
-              </Text>
-            </View>
+            <Ionicons
+              name={isPlaying ? 'pause' : 'play'}
+              size={40}
+              color="#ffffff"
+              style={isPlaying ? styles.pauseIcon : styles.playIcon}
+            />
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -251,11 +253,11 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'rgba(59, 130, 246, 0.3)',
   },
-  playButtonInner: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
+  playIcon: {
+    marginLeft: 4,
+  },
+  pauseIcon: {
+    marginLeft: 0,
   },
   playButtonPlaying: {
     backgroundColor: '#8b5cf6',
@@ -267,11 +269,6 @@ const styles = StyleSheet.create({
     shadowColor: '#475569',
     borderColor: 'rgba(71, 85, 105, 0.3)',
     opacity: 0.6,
-  },
-  playButtonText: {
-    fontSize: 36,
-    color: '#ffffff',
-    marginLeft: 2,
   },
   speedSection: {
     paddingTop: 4,

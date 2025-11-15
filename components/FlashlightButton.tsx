@@ -67,7 +67,7 @@ export default function FlashlightButton({
       const MorseConverterService = require('../services/MorseConverterService').default;
       const timings = MorseConverterService.morseToTiming(morseCode);
 
-      await FlashlightService.transmitMorse(
+      FlashlightService.transmitMorse(
         timings,
         () => {
           // Transmission complete
@@ -80,7 +80,12 @@ export default function FlashlightButton({
           const errorNotification = ErrorHandler.handleFlashlightError(error, 'transmission');
           onError?.(errorNotification.message);
         }
-      );
+      ).catch((error) => {
+        // Handle immediate errors (before transmission starts)
+        setIsTransmitting(false);
+        const errorNotification = ErrorHandler.handleFlashlightError(error, 'flashlight start');
+        onError?.(errorNotification.message);
+      });
     } catch (error) {
       setIsTransmitting(false);
       const errorNotification = ErrorHandler.handleFlashlightError(error, 'flashlight start');

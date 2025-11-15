@@ -24,6 +24,7 @@ class AudioService {
   private progressInterval: NodeJS.Timeout | null = null;
   private playbackTimeout: NodeJS.Timeout | null = null;
   private onProgressCallback: ((progress: number) => void) | null = null;
+  private onCompleteCallback: (() => void) | null = null;
   private currentTimings: MorseTiming[] = [];
   private currentSpeed: number = 1;
   private readonly FREQUENCY = 600; // Hz
@@ -163,11 +164,13 @@ class AudioService {
    * @param timings - Array of timing objects
    * @param speed - Speed multiplier (0.5 to 2.0)
    * @param onProgress - Progress callback function
+   * @param onComplete - Completion callback function
    */
   async playMorse(
     timings: MorseTiming[],
     speed: number = 1,
-    onProgress: (progress: number) => void
+    onProgress: (progress: number) => void,
+    onComplete?: () => void
   ): Promise<void> {
     if (timings.length === 0) {
       throw new Error('No timings provided');
@@ -185,6 +188,7 @@ class AudioService {
       this.currentTimings = timings;
       this.currentSpeed = speed;
       this.onProgressCallback = onProgress;
+      this.onCompleteCallback = onComplete || null;
 
       // Calculate total duration
       const totalDuration = this.calculateTotalDuration(timings, speed);
@@ -232,10 +236,13 @@ class AudioService {
 
     // Check if we've reached the end
     if (index >= timings.length) {
-      this.cleanup();
       if (this.onProgressCallback) {
         this.onProgressCallback(1); // 100% complete
       }
+      if (this.onCompleteCallback) {
+        this.onCompleteCallback();
+      }
+      this.cleanup();
       return;
     }
 
@@ -441,6 +448,10 @@ class AudioService {
       pausedTime: 0,
       totalDuration: 0,
     };
+
+    // Clear callbacks
+    this.onProgressCallback = null;
+    this.onCompleteCallback = null;
 
     this.onProgressCallback = null;
   }

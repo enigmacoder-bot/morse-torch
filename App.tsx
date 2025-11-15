@@ -93,14 +93,29 @@ export default function App() {
           setProgress(0);
           setIsPlaying(true);
 
-          // Start playback with progress callback
-          await AudioService.playMorse(timings, playbackSpeed, (newProgress) => {
-            setProgress(newProgress);
+          // Start playback with progress and completion callbacks
+          AudioService.playMorse(
+            timings,
+            playbackSpeed,
+            (newProgress) => {
+              setProgress(newProgress);
+            },
+            () => {
+              // Playback completed
+              setIsPlaying(false);
+              setProgress(0);
+            }
+          ).catch((error) => {
+            // Handle errors during playback
+            const errorNotification = ErrorHandler.handleAudioPlaybackError(error, 'playback');
+            setIsPlaying(false);
+            setProgress(0);
+            setNotification({
+              message: errorNotification.message,
+              type: errorNotification.type,
+              visible: true,
+            });
           });
-
-          // Playback completed
-          setIsPlaying(false);
-          setProgress(0);
         }
       }
     } catch (error) {
@@ -131,18 +146,21 @@ export default function App() {
 
     // Restart playback with new speed if was playing
     if (wasPlaying && morseCode) {
-      try {
-        const timings = MorseConverterService.morseToTiming(morseCode);
-        setIsPlaying(true);
+      const timings = MorseConverterService.morseToTiming(morseCode);
+      setIsPlaying(true);
 
-        await AudioService.playMorse(timings, newSpeed, (newProgress) => {
+      AudioService.playMorse(
+        timings,
+        newSpeed,
+        (newProgress) => {
           setProgress(newProgress);
-        });
-
-        // Playback completed
-        setIsPlaying(false);
-        setProgress(0);
-      } catch (error) {
+        },
+        () => {
+          // Playback completed
+          setIsPlaying(false);
+          setProgress(0);
+        }
+      ).catch((error) => {
         // Handle audio playback error after speed change
         const errorNotification = ErrorHandler.handleAudioPlaybackError(error, 'speed change');
         setIsPlaying(false);
@@ -152,7 +170,7 @@ export default function App() {
           type: errorNotification.type,
           visible: true,
         });
-      }
+      });
     }
   }, [isPlaying, morseCode]);
 
