@@ -24,27 +24,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci  # Use ci for reproducible builds
+        run: npm install
+        working-directory: app-mobile
       
       - name: Setup Expo CLI
         run: npm install -g @expo/cli
       
       - name: Generate Android project
         run: npx expo prebuild --platform android --clean
+        working-directory: app-mobile
       
       - name: Build APK
         run: |
           cd android
           chmod +x ./gradlew
           ./gradlew assembleRelease
+        working-directory: app-mobile
         env:
-          NODE_ENV: production  # Fixes the Expo warning
+          NODE_ENV: production
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: morse-flash-standalone-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: app-mobile/android/app/build/outputs/apk/release/*.apk
