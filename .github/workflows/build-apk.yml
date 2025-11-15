@@ -31,8 +31,11 @@ jobs:
       - name: Setup Expo CLI
         run: npm install -g @expo/cli
       
+      - name: Clean Android directory
+        run: rm -rf android
+      
       - name: Generate Android project
-        run: npx expo prebuild --platform android --clean
+        run: npx expo prebuild --platform android
       
       - name: Build APK
         run: |
