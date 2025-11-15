@@ -7,7 +7,6 @@ import AudioControls from './components/AudioControls';
 import DownloadButton from './components/DownloadButton';
 import FlashlightButton from './components/FlashlightButton';
 import Notification from './components/Notification';
-import AppLogo from './components/AppLogo';
 import AudioService from './services/AudioService';
 import FlashlightService from './services/FlashlightService';
 import MorseConverterService from './services/MorseConverterService';
@@ -225,7 +224,6 @@ export default function App() {
         />
 
         <View style={styles.header}>
-          <AppLogo />
           <View style={styles.headerTextContainer}>
             <Text style={styles.headerText}>Morse Flash</Text>
             <Text style={styles.headerSubtitle}>Convert, Flash & Send</Text>
@@ -304,12 +302,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
-    flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
   },
   headerTextContainer: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   headerText: {
     color: '#f8fafc',
