@@ -55,27 +55,16 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
       
-      - name: Fix Kotlin version compatibility
+      - name: Fix Kotlin version compatibility  
         run: |
-          # Add suppression to all module build.gradle files
-          find android -name "build.gradle" -o -name "build.gradle.kts" | while read file; do
-            if grep -q "composeOptions" "$file" 2>/dev/null; then
-              echo "Adding suppression to $file"
-              # Add after composeOptions block
-              sed -i '/composeOptions {/a\        kotlinCompilerExtensionVersion = "1.5.15"\n    }\n    kotlinOptions {\n        freeCompilerArgs += ["-P", "plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24"]' "$file"
-            fi
-          done
+          # Create gradle.properties with suppression flag
+          cat >> android/gradle.properties << 'EOF'
+
+# Suppress Kotlin-Compose version compatibility check
+kotlin.compiler.freeArgs=-P plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24
+EOF
           
-          # Add to gradle.properties (global suppression)
-          echo "" >> android/gradle.properties
-          echo "# Suppress Kotlin version compatibility check" >> android/gradle.properties
-          echo "kotlin.suppressKotlinVersionCompatibilityCheck=1.9.24" >> android/gradle.properties
-          
-          # Add system property to gradle.properties
-          echo "systemProp.compose.kotlinCompilerExtensionVersion=1.5.15" >> android/gradle.properties
-          echo "systemProp.compose.kotlinCompilerPlugin=androidx.compose.compiler:compiler:1.5.15" >> android/gradle.properties
-          
-          echo "=== gradle.properties ==="
+          echo "=== Updated gradle.properties ==="
           cat android/gradle.properties
       
       - name: Clean Gradle cache
@@ -87,29 +76,8 @@ jobs:
       - name: Build standalone release APK
         run: |
           echo "Building standalone release APK..."
-          # Add retry logic for handling temporary network issues
-          max_attempts=3
-          attempt=1
-          
-          while [ $attempt -le $max_attempts ]; do
-            echo "Build attempt $attempt of $max_attempts"
-            
-            if ./gradlew assembleRelease --stacktrace; then
-              echo "Build successful!"
-              break
-            else
-              echo "Build failed on attempt $attempt"
-              
-              if [ $attempt -eq $max_attempts ]; then
-                echo "All build attempts failed"
-                exit 1
-              fi
-              
-              echo "Waiting 30 seconds before retry..."
-              sleep 30
-              attempt=$((attempt + 1))
-            fi
-          done
+          # Build with suppression flag passed directly
+          ./gradlew assembleRelease --stacktrace -Pkotlin.compiler.freeArgs="-P plugin:androidx.compose.compiler.plugins.kotlin:suppressKotlinVersionCompatibilityCheck=1.9.24"
         working-directory: android
       
       - name: Upload standalone APK artifact
