@@ -27,21 +27,18 @@ jobs:
       
       - name: Install dependencies
         run: npm install
-        working-directory: app-mobile
       
       - name: Setup Expo CLI
         run: npm install -g @expo/cli
       
       - name: Generate Android project
         run: npx expo prebuild --platform android --clean
-        working-directory: app-mobile
       
       - name: Build APK
         run: |
           cd android
           chmod +x ./gradlew
           ./gradlew assembleRelease
-        working-directory: app-mobile
         env:
           NODE_ENV: production
       
@@ -49,4 +46,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: morse-flash-standalone-apk
-          path: app-mobile/android/app/build/outputs/apk/release/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
