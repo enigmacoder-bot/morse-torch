@@ -114,6 +114,9 @@ export default function FlashlightButton({
         >
           {buttonText}
         </Text>
+        {isTransmitting && (
+          <View style={styles.transmissionIndicator} />
+        )}
       </TouchableOpacity>
 
       {/* Show permission error message */}
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ef4444',
   },
   icon: {
-    fontSize: 20,
+    fontSize: 24,
   },
   buttonText: {
     color: '#f8fafc',
@@ -174,6 +177,19 @@ const styles = StyleSheet.create({
   },
   buttonTextDisabled: {
     color: 'rgba(248, 250, 252, 0.5)',
+  },
+  transmissionIndicator: {
+    position: 'absolute',
+    right: 12,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10b981',
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 8,
   },
   errorContainer: {
     marginTop: 8,

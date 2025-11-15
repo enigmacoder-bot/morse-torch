@@ -71,6 +71,10 @@ const AudioControls = React.memo(({
 
   return (
     <View style={styles.container}>
+      <View style={styles.headerSection}>
+        <Text style={styles.headerText}>Audio Playback</Text>
+      </View>
+
       {/* Play/Pause Button */}
       <View style={styles.playbackSection}>
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
@@ -79,6 +83,7 @@ const AudioControls = React.memo(({
             style={[
               styles.playButton,
               disabled && styles.playButtonDisabled,
+              isPlaying && styles.playButtonPlaying,
             ]}
             activeOpacity={0.7}
             disabled={disabled}
@@ -115,7 +120,10 @@ const AudioControls = React.memo(({
                 styles.progressBarFill,
                 { width: progressWidth },
               ]}
-            />
+            >
+              {/* Progress indicator handle */}
+              <View style={styles.progressHandle} />
+            </View>
           </View>
         </TouchableOpacity>
       </View>
@@ -162,33 +170,46 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    padding: 20,
+    padding: 24,
     marginHorizontal: 16,
     marginTop: 16,
+  },
+  headerSection: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  headerText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#f8fafc',
+    textAlign: 'center',
   },
   playbackSection: {
     alignItems: 'center',
     marginBottom: 20,
   },
   playButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: '#3b82f6',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  playButtonPlaying: {
+    backgroundColor: '#8b5cf6',
   },
   playButtonDisabled: {
     backgroundColor: '#64748b',
     opacity: 0.5,
   },
   playButtonText: {
-    fontSize: 24,
+    fontSize: 32,
     color: '#ffffff',
   },
   progressSection: {
@@ -218,6 +239,21 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: '#3b82f6',
     borderRadius: 4,
+    position: 'relative',
+  },
+  progressHandle: {
+    position: 'absolute',
+    right: -6,
+    top: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   speedSection: {
     marginTop: 8,

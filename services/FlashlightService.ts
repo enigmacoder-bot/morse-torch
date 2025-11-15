@@ -124,11 +124,11 @@ class FlashlightService {
           this.turnOffFlashlight();
         }
 
-        // Schedule next timing
+        // Schedule next timing with a small buffer to ensure state changes are applied
         const timeoutId = setTimeout(() => {
           currentIndex++;
           scheduleNext();
-        }, timing.duration);
+        }, timing.duration + 10); // Adding 10ms buffer to ensure state changes are processed
 
         this.transmissionTimeouts.push(timeoutId);
       };

@@ -7,6 +7,7 @@ import AudioControls from './components/AudioControls';
 import DownloadButton from './components/DownloadButton';
 import FlashlightButton from './components/FlashlightButton';
 import Notification from './components/Notification';
+import AppLogo from './components/AppLogo';
 import AudioService from './services/AudioService';
 import FlashlightService from './services/FlashlightService';
 import MorseConverterService from './services/MorseConverterService';
@@ -24,7 +25,7 @@ export default function App() {
     type: 'success' | 'error' | 'warning';
     visible: boolean;
   }>({ message: '', type: 'success', visible: false });
-  
+
   const appState = useRef(AppState.currentState);
 
   // Handle app state changes (background/foreground)
@@ -88,7 +89,7 @@ export default function App() {
         } else {
           // Start new playback
           const timings = MorseConverterService.morseToTiming(morseCode);
-          
+
           // Reset progress
           setProgress(0);
           setIsPlaying(true);
@@ -119,7 +120,7 @@ export default function App() {
   // Handle speed change
   const handleSpeedChange = useCallback(async (newSpeed: number) => {
     const wasPlaying = isPlaying;
-    
+
     // Stop current playback if playing
     if (wasPlaying) {
       AudioService.pausePlayback();
@@ -181,7 +182,7 @@ export default function App() {
     try {
       const timings = MorseConverterService.morseToTiming(morseCode);
       const fileUri = await AudioService.generateAudioFile(timings, playbackSpeed);
-      
+
       // Show success notification with file location
       setNotification({
         message: `Audio saved to: ${fileUri}`,
@@ -222,21 +223,36 @@ export default function App() {
           visible={notification.visible}
           onHide={hideNotification}
         />
-        
+
         <View style={styles.header}>
-          <Text style={styles.headerText}>⚡ Morse Code Generator</Text>
+          <AppLogo />
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.headerText}>Morse Flash</Text>
+            <Text style={styles.headerSubtitle}>Convert, Flash & Send</Text>
+          </View>
         </View>
-        
-        <ScrollView 
+
+        <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <TextInputCard onMorseCodeChange={setMorseCode} />
-          <MorseDisplayCard morseCode={morseCode} />
-          
+          <View style={styles.cardContainer}>
+            <TextInputCard onMorseCodeChange={setMorseCode} />
+          </View>
+
+          {morseCode ? (
+            <View style={styles.cardContainer}>
+              <MorseDisplayCard morseCode={morseCode} />
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>Enter text to see Morse code</Text>
+            </View>
+          )}
+
           {morseCode && (
-            <>
+            <View style={styles.featureSection}>
               <AudioControls
                 speed={playbackSpeed}
                 onSpeedChange={handleSpeedChange}
@@ -248,21 +264,25 @@ export default function App() {
                 onPlayPause={handlePlayPause}
                 disabled={!morseCode}
               />
-              
-              <DownloadButton
-                onDownload={handleDownload}
-                disabled={!morseCode}
-              />
-              
-              <FlashlightButton
-                morseCode={morseCode}
-                onError={handleFlashlightError}
-                disabled={!morseCode}
-              />
-            </>
+
+              <View style={styles.buttonRow}>
+                <DownloadButton
+                  onDownload={handleDownload}
+                  disabled={!morseCode}
+                />
+              </View>
+
+              <View style={styles.buttonRow}>
+                <FlashlightButton
+                  morseCode={morseCode}
+                  onError={handleFlashlightError}
+                  disabled={!morseCode}
+                />
+              </View>
+            </View>
           )}
         </ScrollView>
-        
+
         <StatusBar style="light" />
       </View>
     </SafeAreaView>
@@ -280,20 +300,58 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingVertical: 24,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  headerTextContainer: {
+    alignItems: 'flex-start',
   },
   headerText: {
     color: '#f8fafc',
     fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: '800',
+    textAlign: 'left',
+    textShadowColor: 'rgba(59, 130, 246, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  headerSubtitle: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'left',
+    marginTop: 2,
+    opacity: 0.8,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingVertical: 24,
+    paddingHorizontal: 16,
+  },
+  cardContainer: {
+    marginBottom: 16,
+  },
+  emptyState: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    color: '#94a3b8',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  featureSection: {
+    marginTop: 8,
+    gap: 16,
+  },
+  buttonRow: {
+    width: '100%',
   },
 });
