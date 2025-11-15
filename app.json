@@ -25,6 +25,14 @@
         {
           "cameraPermission": "Allow Morse Flash to access your camera for flashlight functionality."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.9.25"
+          }
+        }
       ]
     ]
   }

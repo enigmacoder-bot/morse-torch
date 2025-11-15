@@ -24,44 +24,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
       
       - name: Install dependencies
-        run: npm install
+        run: npm ci  # Use ci for reproducible builds
       
       - name: Setup Expo CLI
-        run: npm install -g @expo/cli eas-cli
-      
-      - name: Clear caches
-        run: |
-          rm -rf node_modules/.cache
-          rm -rf .expo
-          rm -rf /tmp/metro-* 2>/dev/null || true
-          rm -rf /tmp/haste-* 2>/dev/null || true
+        run: npm install -g @expo/cli
       
       - name: Generate Android project
         run: npx expo prebuild --platform android --clean
       
-      - name: Update Kotlin version to 1.9.25
+      - name: Build APK
         run: |
-          # Update Kotlin version in root build.gradle
-          sed -i 's/kotlinVersion = "1.9.24"/kotlinVersion = "1.9.25"/' android/build.gradle
-          sed -i "s/kotlinVersion = '1.9.24'/kotlinVersion = '1.9.25'/" android/build.gradle
-          sed -i 's/ext\.kotlinVersion = "1.9.24"/ext.kotlinVersion = "1.9.25"/' android/build.gradle
-          sed -i "s/ext\.kotlinVersion = '1.9.24'/ext.kotlinVersion = '1.9.25'/" android/build.gradle
-          
-          echo "=== Updated Kotlin version to 1.9.25 ==="
-          grep -n "kotlin" android/build.gradle | head -20 || echo "No kotlinVersion found in build.gradle"
-      
-      - name: Make gradlew executable
-        run: chmod +x ./android/gradlew
-      
-      - name: Clean and build APK
-        run: |
-          ./gradlew clean
-          ./gradlew assembleRelease --stacktrace
-        working-directory: android
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
         env:
-          NODE_ENV: production
+          NODE_ENV: production  # Fixes the Expo warning
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
