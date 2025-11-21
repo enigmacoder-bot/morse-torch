@@ -4,10 +4,10 @@
     "slug": "morse-flash",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/morse-icon.png",
+    "icon": "./assets/morse-logo.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/morse-icon.png",
+      "image": "./assets/morse-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#0f172a"
     },
@@ -15,13 +15,15 @@
       "**/*"
     ],
     "android": {
-      "package": "com.morseflash.app",
+      "package": "com.morseflashlight.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/morse-icon.png",
+        "foregroundImage": "./assets/morse-logo.png",
         "backgroundColor": "#0f172a"
       },
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "minSdkVersion": 21
     },
@@ -40,6 +42,17 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4b843952-d45d-4adf-af6e-473e7a3e4c94"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.morseflashlight.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
   }
 }

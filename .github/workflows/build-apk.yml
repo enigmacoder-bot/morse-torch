@@ -1,4 +1,4 @@
-name: Build Standalone APK
+name: Build Android with EAS
 
 on:
   push:
@@ -14,39 +14,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
-      
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
       
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      
       - name: Install dependencies
         run: npm install
       
-      - name: Setup Expo CLI
-        run: npm install -g @expo/cli
-      
-      - name: Clean Android directory
-        run: rm -rf android
-      
-      - name: Generate Android project
-        run: npx expo prebuild --platform android
-      
-      - name: Build APK
-        run: |
-          cd android
-          chmod +x ./gradlew
-          ./gradlew assembleRelease
-        env:
-          NODE_ENV: production
-      
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: morse-flash-standalone-apk
-          path: android/app/build/outputs/apk/release/*.apk
+      - name: Build AAB for Play Store (Production)
+        if: github.event_name != 'pull_request'
+        run: eas build --platform android --profile production --non-interactive --no-wait
+        
+      - name: Build APK for Testing (Preview)
+        if: github.event_name == 'pull_request'
+        run: eas build --platform android --profile preview --non-interactive --no-wait
