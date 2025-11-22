@@ -48,6 +48,19 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
       
+      - name: Decode and setup keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+      
+      - name: Create keystore properties
+        run: |
+          cat > android/keystore.properties << EOF
+          storeFile=release.keystore
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+      
       - name: Clean Gradle cache
         working-directory: android
         run: ./gradlew clean --refresh-dependencies
