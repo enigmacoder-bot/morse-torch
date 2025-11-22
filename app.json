@@ -25,7 +25,9 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "minSdkVersion": 21
+      "minSdkVersion": 21,
+      "targetSdkVersion": 35,
+      "compileSdkVersion": 35
     },
     "plugins": [
       [
