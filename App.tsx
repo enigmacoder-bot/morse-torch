@@ -83,10 +83,12 @@ export default function App() {
         // Check if we need to resume or start new playback
         if (AudioService.isPaused()) {
           // Resume from paused state
+          FlashlightService.stopTransmission();
           await AudioService.resumePlayback();
           setIsPlaying(true);
         } else {
           // Start new playback
+          FlashlightService.stopTransmission();
           const timings = MorseConverterService.morseToTiming(morseCode);
 
           // Reset progress
@@ -293,6 +295,12 @@ export default function App() {
                   morseCode={morseCode}
                   onError={handleFlashlightError}
                   disabled={!morseCode}
+                  onTransmissionStart={() => {
+                    if (isPlaying) {
+                      AudioService.pausePlayback();
+                      setIsPlaying(false);
+                    }
+                  }}
                 />
               </View>
             </View>

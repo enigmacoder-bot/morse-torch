@@ -21,6 +21,8 @@ class AudioService {
     pausedTime: 0,
     totalDuration: 0,
   };
+  private accumulatedDuration: number = 0;
+  private currentItemStartTime: number = 0;
   private progressInterval: NodeJS.Timeout | null = null;
   private playbackTimeout: NodeJS.Timeout | null = null;
   private onProgressCallback: ((progress: number) => void) | null = null;
@@ -58,10 +60,10 @@ class AudioService {
     const sampleRate = 44100;
     const numSamples = Math.floor((duration / 1000) * sampleRate);
     const amplitude = 0.3; // 30% volume to avoid clipping
-    
+
     // Create WAV file header
     const wavHeader = this.createWavHeader(numSamples, sampleRate);
-    
+
     // Generate sine wave samples
     const samples = new Int16Array(numSamples);
     for (let i = 0; i < numSamples; i++) {
@@ -69,17 +71,17 @@ class AudioService {
       const sample = Math.sin(2 * Math.PI * frequency * t) * amplitude;
       samples[i] = Math.floor(sample * 32767); // Convert to 16-bit PCM
     }
-    
+
     // Combine header and samples
     const wavData = new Uint8Array(wavHeader.length + samples.length * 2);
     wavData.set(wavHeader, 0);
-    
+
     // Copy samples as bytes
     const dataView = new DataView(wavData.buffer);
     for (let i = 0; i < samples.length; i++) {
       dataView.setInt16(wavHeader.length + i * 2, samples[i], true);
     }
-    
+
     // Convert to base64
     const base64 = this.arrayBufferToBase64(wavData);
     return `data:audio/wav;base64,${base64}`;
@@ -97,15 +99,15 @@ class AudioService {
     const byteRate = sampleRate * numChannels * (bitsPerSample / 8);
     const blockAlign = numChannels * (bitsPerSample / 8);
     const dataSize = numSamples * numChannels * (bitsPerSample / 8);
-    
+
     const header = new Uint8Array(44);
     const view = new DataView(header.buffer);
-    
+
     // "RIFF" chunk descriptor
     this.writeString(view, 0, 'RIFF');
     view.setUint32(4, 36 + dataSize, true); // File size - 8
     this.writeString(view, 8, 'WAVE');
-    
+
     // "fmt " sub-chunk
     this.writeString(view, 12, 'fmt ');
     view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
@@ -115,11 +117,11 @@ class AudioService {
     view.setUint32(28, byteRate, true);
     view.setUint16(32, blockAlign, true);
     view.setUint16(34, bitsPerSample, true);
-    
+
     // "data" sub-chunk
     this.writeString(view, 36, 'data');
     view.setUint32(40, dataSize, true);
-    
+
     return header;
   }
 
@@ -203,6 +205,9 @@ class AudioService {
         totalDuration,
       };
 
+      this.accumulatedDuration = 0;
+      this.currentItemStartTime = 0;
+
       // Start progress tracking
       this.startProgressTracking();
 
@@ -249,8 +254,9 @@ class AudioService {
     const timing = timings[index];
     const adjustedDuration = timing.duration / speed;
 
-    // Update current index
+    // Update current index and timing info for progress tracking
     this.playbackState.currentIndex = index;
+    this.currentItemStartTime = Date.now();
 
     // Play sound for dit or dah
     if (timing.type === 'dit' || timing.type === 'dah') {
@@ -259,6 +265,9 @@ class AudioService {
       // For gaps, just wait
       await this.wait(adjustedDuration);
     }
+
+    // Update accumulated duration after item completes
+    this.accumulatedDuration += adjustedDuration;
 
     // Schedule next timing
     this.playbackTimeout = setTimeout(() => {
@@ -274,7 +283,7 @@ class AudioService {
     try {
       // Generate beep tone data URI
       const dataUri = this.generateBeepDataUri(this.FREQUENCY, duration);
-      
+
       // Create and play the sound
       const { sound } = await Audio.Sound.createAsync(
         { uri: dataUri },
@@ -316,9 +325,21 @@ class AudioService {
     // Update progress at ~60fps (every 16ms)
     this.progressInterval = setInterval(() => {
       if (this.playbackState.isPlaying && !this.playbackState.isPaused) {
-        const elapsed = Date.now() - this.playbackState.startTime;
-        const progress = Math.min(elapsed / this.playbackState.totalDuration, 1);
-        
+        // Calculate progress based on accumulated duration + current item elapsed time
+        // This avoids drift caused by overhead between items
+        let currentProgress = 0;
+
+        if (this.playbackState.totalDuration > 0) {
+          const currentItemElapsed = Date.now() - this.currentItemStartTime;
+          // Clamp elapsed to the item's duration to prevent overshooting if there's lag
+          const currentItemDuration = this.currentTimings[this.playbackState.currentIndex]?.duration / this.currentSpeed || 0;
+          const effectiveElapsed = Math.min(currentItemElapsed, currentItemDuration);
+
+          currentProgress = (this.accumulatedDuration + effectiveElapsed) / this.playbackState.totalDuration;
+        }
+
+        const progress = Math.min(Math.max(currentProgress, 0), 1);
+
         if (this.onProgressCallback) {
           this.onProgressCallback(progress);
         }
@@ -353,9 +374,13 @@ class AudioService {
   async resumePlayback(): Promise<void> {
     if (this.playbackState.isPlaying && this.playbackState.isPaused) {
       // Adjust start time to account for pause duration
-      const pauseDuration = Date.now() - this.playbackState.pausedTime;
-      this.playbackState.startTime += pauseDuration;
+      // For index-based tracking, we just need to reset the current item start time
+      // effectively restarting the current item or continuing from where we left off?
+      // Since we stop the sound on pause, we will likely restart the current item.
+      // But playSequence will be called with currentIndex.
+
       this.playbackState.isPaused = false;
+      this.currentItemStartTime = Date.now(); // Reset for the resumed item
 
       // Resume from current index
       await this.playSequence(
@@ -396,7 +421,8 @@ class AudioService {
 
     // Update playback state
     this.playbackState.currentIndex = targetIndex;
-    this.playbackState.startTime = Date.now() - targetTime;
+    this.accumulatedDuration = accumulatedTime; // Set accumulated to start of this item
+    this.currentItemStartTime = Date.now(); // Will be reset on play
 
     // Resume if was playing
     if (wasPlaying) {
@@ -448,12 +474,12 @@ class AudioService {
       pausedTime: 0,
       totalDuration: 0,
     };
+    this.accumulatedDuration = 0;
+    this.currentItemStartTime = 0;
 
     // Clear callbacks
     this.onProgressCallback = null;
     this.onCompleteCallback = null;
-
-    this.onProgressCallback = null;
   }
 
   /**
@@ -485,11 +511,20 @@ class AudioService {
       return 0;
     }
 
-    const elapsed = this.playbackState.isPaused
-      ? this.playbackState.pausedTime - this.playbackState.startTime
-      : Date.now() - this.playbackState.startTime;
+    // Same calculation as in startProgressTracking
+    let currentProgress = 0;
+    if (this.playbackState.totalDuration > 0) {
+      const currentItemElapsed = this.playbackState.isPaused
+        ? this.playbackState.pausedTime - this.currentItemStartTime
+        : Date.now() - this.currentItemStartTime;
 
-    return Math.min(elapsed / this.playbackState.totalDuration, 1);
+      const currentItemDuration = this.currentTimings[this.playbackState.currentIndex]?.duration / this.currentSpeed || 0;
+      const effectiveElapsed = Math.min(currentItemElapsed, currentItemDuration);
+
+      currentProgress = (this.accumulatedDuration + effectiveElapsed) / this.playbackState.totalDuration;
+    }
+
+    return Math.min(Math.max(currentProgress, 0), 1);
   }
 
   /**
@@ -510,20 +545,20 @@ class AudioService {
     try {
       const sampleRate = 44100;
       const amplitude = 0.3;
-      
+
       // Calculate total duration and number of samples
       const totalDuration = this.calculateTotalDuration(timings, speed);
       const totalSamples = Math.floor((totalDuration / 1000) * sampleRate);
-      
+
       // Create sample buffer
       const samples = new Int16Array(totalSamples);
       let currentSampleIndex = 0;
-      
+
       // Generate samples for each timing
       for (const timing of timings) {
         const adjustedDuration = timing.duration / speed;
         const numSamples = Math.floor((adjustedDuration / 1000) * sampleRate);
-        
+
         if (timing.type === 'dit' || timing.type === 'dah') {
           // Generate sine wave for beep
           for (let i = 0; i < numSamples && currentSampleIndex < totalSamples; i++) {
@@ -538,39 +573,39 @@ class AudioService {
           }
         }
       }
-      
+
       // Create WAV file
       const wavHeader = this.createWavHeader(totalSamples, sampleRate);
       const wavData = new Uint8Array(wavHeader.length + samples.length * 2);
       wavData.set(wavHeader, 0);
-      
+
       // Copy samples as bytes
       const dataView = new DataView(wavData.buffer);
       for (let i = 0; i < samples.length; i++) {
         dataView.setInt16(wavHeader.length + i * 2, samples[i], true);
       }
-      
+
       // Generate filename with timestamp
       const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '_');
       const filename = `morse_${timestamp}.wav`;
       const fileUri = `${FileSystem.documentDirectory}${filename}`;
-      
+
       // Convert to base64 and save
       const base64 = this.arrayBufferToBase64(wavData);
       await FileSystem.writeAsStringAsync(fileUri, base64, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      
+
       return fileUri;
     } catch (error) {
       console.error('[AudioService] Failed to generate audio file:', error);
       if (error instanceof Error) {
         console.error('[AudioService] Generation error details:', error.message, error.stack);
-        
+
         // Check for storage-related errors
-        if (error.message.toLowerCase().includes('storage') || 
-            error.message.toLowerCase().includes('space') ||
-            error.message.toLowerCase().includes('disk full')) {
+        if (error.message.toLowerCase().includes('storage') ||
+          error.message.toLowerCase().includes('space') ||
+          error.message.toLowerCase().includes('disk full')) {
           throw new Error('Insufficient storage space available');
         }
       }
