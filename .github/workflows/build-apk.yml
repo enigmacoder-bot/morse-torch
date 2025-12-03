@@ -48,6 +48,19 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./android/gradlew
       
+      - name: Decode and setup keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+      
+      - name: Create keystore properties
+        run: |
+          cat > android/keystore.properties << EOF
+          storeFile=release.keystore
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+      
       - name: Clean Gradle cache
         working-directory: android
         run: ./gradlew clean --refresh-dependencies
@@ -60,7 +73,29 @@ jobs:
           while [ $attempt -le $max_attempts ]; do
             echo "Build attempt $attempt of $max_attempts"
             if ./gradlew assembleRelease --stacktrace; then
-              echo "Build successful!"
+              echo "APK Build successful!"
+              break
+            else
+              echo "Build failed on attempt $attempt"
+              if [ $attempt -eq $max_attempts ]; then
+                echo "All build attempts failed"
+                exit 1
+              fi
+              echo "Waiting 30 seconds before retry..."
+              sleep 30
+              attempt=$((attempt + 1))
+            fi
+          done
+      
+      - name: Build release AAB (App Bundle)
+        working-directory: android
+        run: |
+          max_attempts=3
+          attempt=1
+          while [ $attempt -le $max_attempts ]; do
+            echo "Build attempt $attempt of $max_attempts"
+            if ./gradlew bundleRelease --stacktrace; then
+              echo "AAB Build successful!"
               break
             else
               echo "Build failed on attempt $attempt"
@@ -79,3 +114,9 @@ jobs:
         with:
           name: morse-flash-apk
           path: android/app/build/outputs/apk/release/*.apk
+      
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: morse-flash-aab
+          path: android/app/build/outputs/bundle/release/*.aab
