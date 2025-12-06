@@ -35,6 +35,10 @@ export default function App() {
         nextAppState.match(/inactive|background/)
       ) {
         // App is going to background - release resources
+        if (isPlaying) {
+          AudioService.pausePlayback();
+          setIsPlaying(false);
+        }
         AudioService.releaseResources();
         FlashlightService.releaseResources();
       }
@@ -44,7 +48,7 @@ export default function App() {
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [isPlaying]);
 
   // Cleanup audio and flashlight resources on unmount
   useEffect(() => {

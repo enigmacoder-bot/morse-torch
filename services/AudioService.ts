@@ -295,14 +295,32 @@ class AudioService {
       // Wait for the duration
       await this.wait(duration);
 
-      // Stop and unload the sound
-      await sound.stopAsync();
-      await sound.unloadAsync();
+      // Stop and unload the sound immediately
+      try {
+        await sound.stopAsync();
+      } catch (e) {
+        // Ignore stop errors
+      }
+      try {
+        await sound.unloadAsync();
+      } catch (e) {
+        // Ignore unload errors
+      }
       this.sound = null;
     } catch (error) {
       console.error('[AudioService] Failed to play beep:', error);
       if (error instanceof Error) {
         console.error('[AudioService] Beep error details:', error.message);
+      }
+      // Ensure sound is cleaned up even on error
+      if (this.sound) {
+        try {
+          await this.sound.stopAsync();
+          await this.sound.unloadAsync();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+        this.sound = null;
       }
       // Continue playback even if one beep fails
     }
@@ -322,20 +340,15 @@ class AudioService {
    * Start progress tracking interval
    */
   private startProgressTracking(): void {
-    // Update progress at ~60fps (every 16ms)
+    // Update progress at 30fps (every 33ms) for smoother, less jittery updates
     this.progressInterval = setInterval(() => {
       if (this.playbackState.isPlaying && !this.playbackState.isPaused) {
-        // Calculate progress based on accumulated duration + current item elapsed time
-        // This avoids drift caused by overhead between items
         let currentProgress = 0;
 
         if (this.playbackState.totalDuration > 0) {
-          const currentItemElapsed = Date.now() - this.currentItemStartTime;
-          // Clamp elapsed to the item's duration to prevent overshooting if there's lag
-          const currentItemDuration = this.currentTimings[this.playbackState.currentIndex]?.duration / this.currentSpeed || 0;
-          const effectiveElapsed = Math.min(currentItemElapsed, currentItemDuration);
-
-          currentProgress = (this.accumulatedDuration + effectiveElapsed) / this.playbackState.totalDuration;
+          // Simple calculation: elapsed time since start / total duration
+          const elapsedTime = Date.now() - this.playbackState.startTime;
+          currentProgress = elapsedTime / this.playbackState.totalDuration;
         }
 
         const progress = Math.min(Math.max(currentProgress, 0), 1);
@@ -344,7 +357,7 @@ class AudioService {
           this.onProgressCallback(progress);
         }
       }
-    }, 16);
+    }, 33);
   }
 
   /**
@@ -357,7 +370,12 @@ class AudioService {
 
       // Stop current sound if playing
       if (this.sound) {
-        this.sound.stopAsync().catch(console.error);
+        this.sound.stopAsync()
+          .then(() => this.sound?.unloadAsync())
+          .catch(console.error)
+          .finally(() => {
+            this.sound = null;
+          });
       }
 
       // Clear timeout
@@ -457,12 +475,16 @@ class AudioService {
       this.playbackTimeout = null;
     }
 
-    // Stop and unload sound
+    // Stop and unload sound with proper error handling
     if (this.sound) {
       this.sound.stopAsync()
         .then(() => this.sound?.unloadAsync())
-        .catch(console.error);
-      this.sound = null;
+        .catch((e) => {
+          console.error('[AudioService] Error during cleanup:', e);
+        })
+        .finally(() => {
+          this.sound = null;
+        });
     }
 
     // Reset playback state
@@ -511,17 +533,13 @@ class AudioService {
       return 0;
     }
 
-    // Same calculation as in startProgressTracking
     let currentProgress = 0;
     if (this.playbackState.totalDuration > 0) {
-      const currentItemElapsed = this.playbackState.isPaused
-        ? this.playbackState.pausedTime - this.currentItemStartTime
-        : Date.now() - this.currentItemStartTime;
+      const elapsedTime = this.playbackState.isPaused
+        ? this.playbackState.pausedTime - this.playbackState.startTime
+        : Date.now() - this.playbackState.startTime;
 
-      const currentItemDuration = this.currentTimings[this.playbackState.currentIndex]?.duration / this.currentSpeed || 0;
-      const effectiveElapsed = Math.min(currentItemElapsed, currentItemDuration);
-
-      currentProgress = (this.accumulatedDuration + effectiveElapsed) / this.playbackState.totalDuration;
+      currentProgress = elapsedTime / this.playbackState.totalDuration;
     }
 
     return Math.min(Math.max(currentProgress, 0), 1);

@@ -64,6 +64,9 @@ export default function FlashlightButton({
       setIsTransmitting(true);
       onTransmissionStart?.();
 
+      // Give a small delay to ensure audio is properly stopped before starting flashlight
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const MorseConverterService = require('../services/MorseConverterService').default;
       const timings = MorseConverterService.morseToTiming(morseCode);
 
